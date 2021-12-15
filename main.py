@@ -3,21 +3,26 @@ import pygame
 
 class Board:
     # создание поля
-    def __init__(self, width, height):
+    def __init__(self, width, height, world=None):
         self.width = width
         self.height = height
-        self.board = [[0] * width for _ in range(height)]
+
+        # формат клетки: [id_биома, [что стоит], id_ресурса]
+        self.board = [[[0, [], 0]] * height for _ in range(width)]
         # значения по умолчанию
         self.x = 300
         self.y = 30
-        self.cell_size = 64
-        self.keyboard = []
+        self.cell_size = 32
+        self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
 
-        self.skybox = pygame.image.load('assets/skybox.png')
-        self.paused = True
         self.screen = screen
-        for i in range(self.width):
-            self.board[self.height - 1][i] = -1
+
+        skybox = pygame.image.load('assets/skybox.png')
+        self.skybox = pygame.transform.scale(skybox, self.screen.get_size())
+        self.paused = True
+
+    def get_biome(self, x, y):
+        return self.board[x][y][0]
 
     # настройка внешнего вида
     def set_view(self, x=10, y=10, cell_size=30):
@@ -25,24 +30,39 @@ class Board:
         self.y = y
         self.cell_size = cell_size
 
-    def render(self, screen):
-        for i in range(self.height):
-            for j in range(self.width):
-                x = j * self.cell_size + self.x
-                y = i * self.cell_size + self.y
-                if self.board[i][j] > 0:
-                    pygame.draw.rect(screen, pygame.Color(pygame.Color('#ABBABF')),
-                                     (x, y, self.cell_size, self.cell_size))
-                elif self.board[i][j] == 0:
-                    pygame.draw.rect(screen, pygame.Color(pygame.Color('#7cfc00')),
-                                     (x, y, self.cell_size, self.cell_size))
-                    pygame.draw.rect(screen, pygame.Color(pygame.Color('#71e300')),
-                                     (x, y, self.cell_size, self.cell_size), 1)
-                elif self.board[i][j] == -1:
-                    pygame.draw.rect(screen, pygame.Color(pygame.Color('#804000')),
-                                     (x, y, self.cell_size, self.cell_size))
-                    pygame.draw.rect(screen, pygame.Color(pygame.Color('#663300')),
-                                     (x, y, self.cell_size, self.cell_size), 1)
+    def render(self):
+        for x in range(self.width):
+            for y in range(self.height):
+                dx = x * self.cell_size + self.x
+                dy = y * self.cell_size + self.y
+                biome = self.get_biome(x, y)
+                print(x, y, dx, dy, biome)
+
+                # Цвет тайла
+                color = pygame.Color(self.ground_tiles[biome])
+                pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size))
+
+                # Цвет обводки тайла
+                hsv = color.hsva
+                color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
+
+                # рисуем обводку
+                pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size), 1)
+
+        for x in range(self.width):
+            dx = x * self.cell_size + self.x
+            dy = self.height * self.cell_size + self.y
+            ground = pygame.Color('#663300')
+
+            pygame.draw.rect(self.screen, ground, (dx, dy, self.cell_size, self.cell_size))
+
+            # Цвет обводки тайла
+            hsv = ground.hsva
+            color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
+
+            # рисуем обводку
+            pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size), 1)
+
         pygame.display.flip()
 
     def tick(self):
@@ -58,32 +78,25 @@ class Board:
             if event.type == pygame.KEYDOWN:
                 if event.unicode == ' ':
                     self.paused = not self.paused
-                elif event.unicode in ['w', 'a', 's', 'd']:
-                    self.keyboard.append(event.unicode)
-            if event.type == pygame.KEYUP:
-                if event.unicode in ['w', 'a', 's', 'd']:
-                    try:
-                        self.keyboard.remove(event.unicode)
-                    except Exception:
-                        pass
 
         self.do_movement()
-
         self.screen.blit(self.skybox, (0, 0))
-        self.render(screen)
+        self.render()
         pygame.display.flip()
         if not self.paused:
             pass
 
     def do_movement(self):
-        if 's' in self.keyboard:
-            self.y -= 5
-        elif 'a' in self.keyboard:
-            self.x -= 5
-        elif 'w' in self.keyboard:
-            self.y += 5
-        elif 'd' in self.keyboard:
-            self.x += 5
+        pygame.event.pump()
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_s]:
+            self.y += 10
+        if keys[pygame.K_a]:
+            self.x -= 10
+        if keys[pygame.K_w]:
+            self.y -= 10
+        if keys[pygame.K_d]:
+            self.x += 10
 
     def get_click(self, mouse_pos):
         cell = self.get_cell(mouse_pos)
@@ -99,18 +112,19 @@ class Board:
         return x, y
 
     def on_click(self, cell):
+        print('paint!', cell)
         try:
-            self.board[cell[1]][cell[0]] = (self.board[cell[1]][cell[0]] + 1) % 2
+            self.board[cell[0]][cell[1]][0] = int(not self.board[cell[0]][cell[1]][0])
         except Exception:
             pass
-        self.render(self.screen)
+        self.render()
 
 
 pygame.init()
 size = 1200, 600
 screen = pygame.display.set_mode(size)
 # поле 5 на 7
-board = Board(12, 13)
+board = Board(12, 12)
 clock = pygame.time.Clock()
 while True:
     board.tick()
