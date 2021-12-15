@@ -20,7 +20,7 @@ class Board:
         self.x = 300
         self.y = 30
         self.screen = screen
-        self.cell_size = 32
+        self.cell_size = 48
         self.paused = False
 
         # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
@@ -128,6 +128,7 @@ class Board:
             self.y -= 10
         if keys[pygame.K_d]:
             self.x += 10
+        self.render()
 
     def get_click(self, mouse_pos):
         cell = self.get_cell(mouse_pos)
