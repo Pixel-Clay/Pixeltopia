@@ -1,25 +1,53 @@
 import pygame
+import csv
+from pprint import pprint
 
 
 class Board:
     # создание поля
-    def __init__(self, width, height, world=None):
+    def __init__(self, width, height, world):
         self.width = width
         self.height = height
 
-        # формат клетки: [id_биома, [что стоит], id_ресурса]
-        self.board = [[[0, [], 0]] * height for _ in range(width)]
+        # загрузка карты
+        print('MAP LOAD', world)
+        self.board = []
+        self.load_map(world)
+        pprint(self.board)
+        print('MAP LOADED')
+
         # значения по умолчанию
         self.x = 300
         self.y = 30
+        self.screen = screen
         self.cell_size = 32
+        self.paused = False
+
+        # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
         self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
 
-        self.screen = screen
 
+        # скайбокс
+        print('SKYBOX LOAD assets/skybox.png')
         skybox = pygame.image.load('assets/skybox.png')
         self.skybox = pygame.transform.scale(skybox, self.screen.get_size())
-        self.paused = True
+
+    # загрузка карты
+    def load_map(self, world):
+        # открывает CSVшку
+        with open(world, encoding="utf8") as csvfile:
+            # чистим карту
+            self.board = []
+            # читаем карту
+            reader = csv.reader(csvfile, delimiter=',')
+            for index, row in enumerate(reader):
+                self.board.append([])
+                for tile in row:
+                    biomes = {'o':0, 'p':1, 'd':2, 's':3, 't':4, 'm':5}
+                    biome = biomes[tile[0]]
+                    # формат тайла: [id_биома, [что стоит], id_ресурса]
+                    self.board[index].append([biome, [], 0])
+
 
     def get_biome(self, x, y):
         return self.board[x][y][0]
@@ -36,7 +64,6 @@ class Board:
                 dx = x * self.cell_size + self.x
                 dy = y * self.cell_size + self.y
                 biome = self.get_biome(x, y)
-                print(x, y, dx, dy, biome)
 
                 # Цвет тайла
                 color = pygame.Color(self.ground_tiles[biome])
@@ -58,10 +85,10 @@ class Board:
 
             # Цвет обводки тайла
             hsv = ground.hsva
-            color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
+            ground.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
 
             # рисуем обводку
-            pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size), 1)
+            pygame.draw.rect(self.screen, ground, (dx, dy, self.cell_size, self.cell_size), 1)
 
         pygame.display.flip()
 
@@ -83,12 +110,16 @@ class Board:
         self.screen.blit(self.skybox, (0, 0))
         self.render()
         pygame.display.flip()
-        if not self.paused:
-            pass
+
 
     def do_movement(self):
         pygame.event.pump()
         keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE]:
+            pygame.quit()
+            exit(0)
+        if keys[pygame.K_f]:
+            pygame.display.toggle_fullscreen()
         if keys[pygame.K_s]:
             self.y += 10
         if keys[pygame.K_a]:
@@ -112,19 +143,20 @@ class Board:
         return x, y
 
     def on_click(self, cell):
-        print('paint!', cell)
         try:
-            self.board[cell[0]][cell[1]][0] = int(not self.board[cell[0]][cell[1]][0])
+            self.board[cell[0]][cell[1]][0] = 5
         except Exception:
             pass
         self.render()
 
 
 pygame.init()
-size = 1200, 600
-screen = pygame.display.set_mode(size)
+
+screen = pygame.display.set_mode((1200,800), pygame.FULLSCREEN)
+
+
 # поле 5 на 7
-board = Board(12, 12)
+board = Board(16, 16, 'assets/map1.csv')
 clock = pygame.time.Clock()
 while True:
     board.tick()

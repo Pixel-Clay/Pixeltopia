@@ -1,0 +1,16 @@
+tm,tf,tp,tp,tp,pf,pf,pp,pf,op,op,op,op,pf,pa,pf
+tf,tc,tc,tf,ta,pf,pf,pf,pp,op,op,op,op,op,pp,pc
+tp,tf,tf,ta,tp,pf,pm,pp,pf,op,op,op,oa,op,op,op
+tm,tc,tf,tc,tm,pf,pp,pe,pp,op,op,op,op,op,op,op
+tf,tm,ta,tf,tp,pf,pe,pf,op,oa,op,op,op,op,op,op
+tc,tm,tm,op,op,op,op,op,op,op,op,op,op,op,op,op
+tm,tp,op,oa,op,op,op,op,op,op,sf,sa,sf,sm,op,op
+ta,tp,op,op,op,op,op,op,op,sf,sa,sp,sf,sp,op,op
+dp,op,op,dp,ta,da,op,op,sm,sp,sa,sc,sc,pp,op,op
+tp,dc,de,dp,dc,dc,dc,dp,dp,pf,pf,pf,pf,pg,pp,pf
+df,df,dc,dc,dp,dm,dm,dc,pf,pf,pp,dp,pd,dg,dc,dc
+dm,df,dp,dm,op,op,dp,dp,dc,dp,dp,op,op,dp,dp,dp
+op,op,op,op,op,op,op,op,op,op,op,oa,op,op,dp,da
+op,op,op,op,op,op,op,op,op,op,op,op,op,op,dm,dc
+op,op,op,op,op,op,op,op,op,op,dc,dp,dc,dg,da,dc
+dp,dg,op,op,op,op,op,op,op,dm,dm,dg,dp,dc,dg,dc
