@@ -47,6 +47,7 @@ class Board:
                     biome = biomes[tile[0]]
                     # формат тайла: [id_биома, [что стоит], id_ресурса]
                     self.board[index].append([biome, [], 0])
+            self.board = list(zip(*self.board))
 
 
     def get_biome(self, x, y):
@@ -115,11 +116,6 @@ class Board:
     def do_movement(self):
         pygame.event.pump()
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_ESCAPE]:
-            pygame.quit()
-            exit(0)
-        if keys[pygame.K_f]:
-            pygame.display.toggle_fullscreen()
         if keys[pygame.K_s]:
             self.y += 10
         if keys[pygame.K_a]:
@@ -128,6 +124,11 @@ class Board:
             self.y -= 10
         if keys[pygame.K_d]:
             self.x += 10
+        if keys[pygame.K_ESCAPE]:
+            pygame.quit()
+            exit(0)
+        if keys[pygame.K_f]:
+            pygame.display.toggle_fullscreen()
         self.render()
 
     def get_click(self, mouse_pos):
