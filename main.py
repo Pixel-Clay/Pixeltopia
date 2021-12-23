@@ -1,6 +1,14 @@
-import pygame
 import csv
 from pprint import pprint
+
+import pygame
+
+debug = True
+
+
+def dprint(*args):
+    if debug:
+        print(*args)
 
 
 class Board:
@@ -10,11 +18,11 @@ class Board:
         self.height = height
 
         # загрузка карты
-        print('MAP LOAD', world)
+        dprint('MAP LOAD', world)
         self.board = []
         self.load_map(world)
         pprint(self.board)
-        print('MAP LOADED')
+        dprint('MAP LOADED')
 
         # значения по умолчанию
         self.x = 300
@@ -26,9 +34,8 @@ class Board:
         # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
         self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
 
-
         # скайбокс
-        print('SKYBOX LOAD assets/skybox.png')
+        dprint('SKYBOX LOAD assets/skybox.png')
         skybox = pygame.image.load('assets/skybox.png')
         self.skybox = pygame.transform.scale(skybox, self.screen.get_size())
 
@@ -43,12 +50,11 @@ class Board:
             for index, row in enumerate(reader):
                 self.board.append([])
                 for tile in row:
-                    biomes = {'o':0, 'p':1, 'd':2, 's':3, 't':4, 'm':5}
+                    biomes = {'o': 0, 'p': 1, 'd': 2, 's': 3, 't': 4, 'm': 5}
                     biome = biomes[tile[0]]
                     # формат тайла: [id_биома, [что стоит], id_ресурса]
                     self.board[index].append([biome, [], 0])
             self.board = list(zip(*self.board))
-
 
     def get_biome(self, x, y):
         return self.board[x][y][0]
@@ -112,7 +118,6 @@ class Board:
         self.render()
         pygame.display.flip()
 
-
     def do_movement(self):
         pygame.event.pump()
         keys = pygame.key.get_pressed()
@@ -154,8 +159,7 @@ class Board:
 
 pygame.init()
 
-screen = pygame.display.set_mode((1200,800))
-
+screen = pygame.display.set_mode((1200, 800))
 
 # поле 5 на 7
 board = Board(16, 16, 'assets/map1.csv')
