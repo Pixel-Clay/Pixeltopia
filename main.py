@@ -154,7 +154,7 @@ class Board:
 
 pygame.init()
 
-screen = pygame.display.set_mode((1200,800), pygame.FULLSCREEN)
+screen = pygame.display.set_mode((1200,800))
 
 
 # поле 5 на 7
