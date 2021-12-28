@@ -3,10 +3,7 @@ from pprint import pprint
 
 import pygame
 
-import resources
-import units
 import structures
-
 
 debug = True
 
@@ -36,6 +33,8 @@ class Board:
         self.cell_size = 48
         self.paused = False
 
+        self.sprites = pygame.sprite.Group()
+
         # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
         self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
 
@@ -57,9 +56,11 @@ class Board:
                 for tile in row:
                     biomes = {'o': 0, 'p': 1, 'd': 2, 's': 3, 't': 4, 'm': 5}
                     biome = biomes[tile[0]]
-                    entities = [structures.Mountain(biome)] if tile[1] == 'm' else []
+                    entities = [structures.BaseStructure(biome, 'assets/missing.png')] if tile[1] == 'm' else []
                     # формат тайла: [id_биома, [что стоит], id_ресурса]
                     self.board[index].append([biome, entities, 0])
+                    self.sprites.add(entities[0])
+
             self.board = list(zip(*self.board))
 
     def get_biome(self, x, y):
@@ -92,6 +93,9 @@ class Board:
                 # рисуем обводку
                 pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size), 1)
 
+                for i in self.get_units(x, y):
+                    i.draw(dx, dy)
+
         for x in range(self.width):
             dx = x * self.cell_size + self.x
             dy = self.height * self.cell_size + self.y
@@ -106,6 +110,8 @@ class Board:
             # рисуем обводку
             pygame.draw.rect(self.screen, ground, (dx, dy, self.cell_size, self.cell_size), 1)
 
+        self.sprites.update()
+        self.sprites.draw(screen)
         pygame.display.flip()
 
     def tick(self):
