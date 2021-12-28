@@ -3,6 +3,13 @@ from pprint import pprint
 
 import pygame
 
+# Классы природных обьектов(горы итд)
+import structures
+
+# Классы юнитов
+import units
+
+# Классы ресурсов
 import structures
 
 from common import dprint, cell_size
@@ -53,10 +60,14 @@ class Board:
                     biomes = {'o': 0, 'p': 1, 'd': 2, 's': 3, 't': 4, 'm': 5}
                     biome = biomes[tile[0]]
 
-                    if tile[1] == 'm':
-                        sprite = structures.BaseStructure(biome, 'assets/missing.png', sprites)
+                    # загрузка юнита или структуры итд согласно карте
+                    if tile[1] == 'm':  # обьект на тайле - вторая буква в коде тайла - t[m]
+                        sprite = structures.Mountain(biome, sprites)
 
-                    entities = [sprite] if tile[1] == 'm' else []
+                    # ...
+
+                    # упаковка спрайта в клетку
+                    entities = [sprite] if tile[1] != 'p' else []
 
                     # формат тайла: [id_биома, [что стоит], id_ресурса]
                     self.board[index].append([biome, entities, 0])

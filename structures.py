@@ -29,3 +29,8 @@ class BaseStructure(pygame.sprite.Sprite):
     def interact(self):
         dprint('STRUCTURE INTERACT', self)
         pass
+
+
+class Mountain(BaseStructure):
+    def __init__(self, biome, group, *smth):
+        super().__init__(biome, 'assets/mountain.png', group, *smth)

@@ -1,7 +1,7 @@
 import pygame
 
 debug = False
-cell_size = 48
+cell_size = 32
 
 def dprint(*args):
     if debug:
