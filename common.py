@@ -1,11 +1,17 @@
-import os
-
 import pygame
+
+debug = False
+cell_size = 48
+
+def dprint(*args):
+    if debug:
+        print(*args)
 
 
 def load_image(name, color_key=None):
     try:
-        image = pygame.image.load(name).convert()
+        texture = pygame.image.load(name).convert()
+        image = pygame.transform.scale(texture, (cell_size, cell_size))
     except pygame.error as message:
         print('Cannot load image:', name)
         raise SystemExit(message)

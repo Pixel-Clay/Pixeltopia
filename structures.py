@@ -1,24 +1,31 @@
 import pygame
 
-import common
+from common import dprint, load_image
 
 
 class BaseStructure(pygame.sprite.Sprite):
-    def __init__(self, biome, texture, *group):
-        super().__init__(*group)
+    def __init__(self, biome, texture, group, *smth):
+        super().__init__(*smth)
 
         self.biome = biome
-        self.texture = common.load_image(texture)
+        self.image = load_image(texture)
 
-        self.rect = self.texture.get_rect()
+        dprint('STRUCTURE NEW', biome, texture, *group, self)
+
+        self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = 0, 0
+
+        self.add(group)
 
 
     def update(self):
+        dprint('STRUCTURE UPDATE', self)
         pass
 
-    def draw(self, x, y):
-        self.rect.x, self.rect.y = self.x, self.y
+    def set_pos(self, x, y):
+        self.rect.x, self.rect.y = x, y
+        dprint('STRUCTURE SET', self, self.rect.x, self.rect.y)
 
     def interact(self):
+        dprint('STRUCTURE INTERACT', self)
         pass

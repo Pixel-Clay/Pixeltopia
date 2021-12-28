@@ -5,17 +5,14 @@ import pygame
 
 import structures
 
-debug = True
+from common import dprint, cell_size
 
-
-def dprint(*args):
-    if debug:
-        print(*args)
+sprites = pygame.sprite.Group()
 
 
 class Board:
     # создание поля
-    def __init__(self, width, height, world):
+    def __init__(self, width, height, world, cell_size):
         self.width = width
         self.height = height
 
@@ -30,10 +27,9 @@ class Board:
         self.x = 300
         self.y = 30
         self.screen = screen
-        self.cell_size = 48
+        self.cell_size = cell_size
         self.paused = False
-
-        self.sprites = pygame.sprite.Group()
+        self.render_world = True
 
         # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
         self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
@@ -56,10 +52,14 @@ class Board:
                 for tile in row:
                     biomes = {'o': 0, 'p': 1, 'd': 2, 's': 3, 't': 4, 'm': 5}
                     biome = biomes[tile[0]]
-                    entities = [structures.BaseStructure(biome, 'assets/missing.png')] if tile[1] == 'm' else []
+
+                    if tile[1] == 'm':
+                        sprite = structures.BaseStructure(biome, 'assets/missing.png', sprites)
+
+                    entities = [sprite] if tile[1] == 'm' else []
+
                     # формат тайла: [id_биома, [что стоит], id_ресурса]
                     self.board[index].append([biome, entities, 0])
-                    self.sprites.add(entities[0])
 
             self.board = list(zip(*self.board))
 
@@ -82,19 +82,20 @@ class Board:
                 dy = y * self.cell_size + self.y
                 biome = self.get_biome(x, y)
 
-                # Цвет тайла
-                color = pygame.Color(self.ground_tiles[biome])
-                pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size))
+                if self.render_world:
+                    # Цвет тайла
+                    color = pygame.Color(self.ground_tiles[biome])
+                    pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size))
 
-                # Цвет обводки тайла
-                hsv = color.hsva
-                color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
+                    # Цвет обводки тайла
+                    hsv = color.hsva
+                    color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
 
-                # рисуем обводку
-                pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size), 1)
+                    # рисуем обводку
+                    pygame.draw.rect(self.screen, color, (dx, dy, self.cell_size, self.cell_size), 1)
 
                 for i in self.get_units(x, y):
-                    i.draw(dx, dy)
+                    i.set_pos(dx, dy)
 
         for x in range(self.width):
             dx = x * self.cell_size + self.x
@@ -110,8 +111,8 @@ class Board:
             # рисуем обводку
             pygame.draw.rect(self.screen, ground, (dx, dy, self.cell_size, self.cell_size), 1)
 
-        self.sprites.update()
-        self.sprites.draw(screen)
+        sprites.update()
+        sprites.draw(self.screen)
         pygame.display.flip()
 
     def tick(self):
@@ -177,7 +178,7 @@ pygame.init()
 screen = pygame.display.set_mode((1200, 800))
 
 # поле 5 на 7
-board = Board(16, 16, 'assets/map1.csv')
+board = Board(16, 16, 'assets/map1.csv', cell_size)
 clock = pygame.time.Clock()
 while True:
     board.tick()
