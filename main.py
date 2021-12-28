@@ -3,6 +3,11 @@ from pprint import pprint
 
 import pygame
 
+import resources
+import units
+import structures
+
+
 debug = True
 
 
@@ -20,7 +25,7 @@ class Board:
         # загрузка карты
         dprint('MAP LOAD', world)
         self.board = []
-        self.load_map(world)
+        self.generate_map(world)
         pprint(self.board)
         dprint('MAP LOADED')
 
@@ -40,7 +45,7 @@ class Board:
         self.skybox = pygame.transform.scale(skybox, self.screen.get_size())
 
     # загрузка карты
-    def load_map(self, world):
+    def generate_map(self, world):
         # открывает CSVшку
         with open(world, encoding="utf8") as csvfile:
             # чистим карту
@@ -52,12 +57,16 @@ class Board:
                 for tile in row:
                     biomes = {'o': 0, 'p': 1, 'd': 2, 's': 3, 't': 4, 'm': 5}
                     biome = biomes[tile[0]]
+                    entities = [structures.Mountain(biome)] if tile[1] == 'm' else []
                     # формат тайла: [id_биома, [что стоит], id_ресурса]
-                    self.board[index].append([biome, [], 0])
+                    self.board[index].append([biome, entities, 0])
             self.board = list(zip(*self.board))
 
     def get_biome(self, x, y):
         return self.board[x][y][0]
+
+    def get_units(self, x, y):
+        return self.board[x][y][1]
 
     # настройка внешнего вида
     def set_view(self, x=10, y=10, cell_size=30):

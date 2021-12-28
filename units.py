@@ -1,0 +1,2 @@
+class BaseUnit:
+    pass
