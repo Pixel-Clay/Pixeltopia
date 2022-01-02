@@ -45,3 +45,8 @@ def random(percentage):
 
 def draw_hud(player):
     pass
+
+
+class MainMenu:
+    def show_menu(self):
+        return 'assets/map1.csv'

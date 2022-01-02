@@ -7,15 +7,14 @@ import pygame
 import common
 
 # Классы природных обьектов(горы итд)
-import structures
+import resources
 
 # Классы юнитов
 import units
 
 # Классы ресурсов
-import resources
 
-from common import dprint, cell_size
+from common import dprint
 
 sprites = pygame.sprite.Group()
 
@@ -34,8 +33,7 @@ class Board:
         dprint('MAP LOADED')
 
         # значения по умолчанию
-        self.x = 300
-        self.y = 30
+
         self.screen = screen
         self.paused = False
         self.render_world = True
@@ -49,9 +47,13 @@ class Board:
 
         self.resize_routine()
 
+        # центрируемся
+        self.x = screen.get_size()[0] / 2 - len(self.board) / 2 * common.cell_size
+        self.y = common.cell_size
+
     # загрузка карты
     def generate_map(self, world):
-        # открывает CSVшку
+        # открываем CSV
         with open(world, encoding="utf8") as csvfile:
             # чистим карту
             self.board = []
@@ -65,13 +67,12 @@ class Board:
 
                     # загрузка юнита или структуры итд согласно карте
                     if tile[1] == 'm':  # обьект на тайле - вторая буква в коде тайла - t[m]
-                        sprite = [structures.Mountain(biome, sprites)]
+                        sprite = [resources.Mountain(biome, sprites)]
 
                     # ...
 
                     else:
                         sprite = []
-
 
                     # упаковка спрайта в клетку
                     # формат тайла: [id_биома, [что стоит], id_ресурса]
@@ -189,18 +190,20 @@ class Board:
     def on_click(self, cell):
         try:
             self.board[cell[0]][cell[1]][0] = 5
-        except Exception:
+        except TypeError:
             pass
-        self.render()
 
 
 pygame.init()
 resolution = (720, 480)
 screen = pygame.display.set_mode(resolution, pygame.RESIZABLE)
-
-# поле 5 на 7
-board = Board(16, 16, 'assets/map1.csv')
-clock = pygame.time.Clock()
 while True:
-    board.tick()
-    clock.tick(30)
+    menu = common.MainMenu()
+    game_map = menu.show_menu()
+    del menu
+    # поле 5 на 7
+    board = Board(16, 16, game_map)
+    clock = pygame.time.Clock()
+    while True:
+        board.tick()
+        clock.tick(30)
