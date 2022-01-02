@@ -1,7 +1,17 @@
 import pygame
+from random import randint
 
 debug = False
-cell_size = 32
+fullscreen = True
+cell_size = 40
+
+
+def window_modes(resolution=(1200, 800)):
+    if fullscreen:
+        return resolution, pygame.FULLSCREEN, pygame.RESIZABLE
+    else:
+        return resolution, pygame.RESIZABLE
+
 
 def dprint(*args):
     if debug:
@@ -23,3 +33,15 @@ def load_image(name, color_key=None):
     else:
         image = image.convert_alpha()
     return image
+
+
+def random(percentage):
+    chance = randint(0, 100)
+    if chance < percentage:
+        return True
+    else:
+        return False
+
+
+def draw_hud(player):
+    pass
