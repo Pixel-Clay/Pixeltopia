@@ -1,6 +1,6 @@
 import pygame
 
-from common import dprint, load_image
+from common import dprint, load_image, assets
 
 
 class BaseResource(pygame.sprite.Sprite):
@@ -14,7 +14,7 @@ class BaseResource(pygame.sprite.Sprite):
         self.texture = texture
         self.image = load_image(texture)
 
-        self.population = 0
+        self.stars = 0
         self.remove_cost = 0
 
         dprint('STRUCTURE NEW', biome, texture, *group, self)
@@ -26,7 +26,6 @@ class BaseResource(pygame.sprite.Sprite):
 
     def update(self):
         dprint('STRUCTURE UPDATE', self)
-        pass
 
     def set_pos(self, x, y):
         self.rect.x, self.rect.y = x, y
@@ -34,8 +33,7 @@ class BaseResource(pygame.sprite.Sprite):
 
     def interact(self):
         dprint('STRUCTURE INTERACT', self)
-        pass
-
+        return self.stars
 
     def resize(self):
         self.image = load_image(self.texture)
@@ -44,7 +42,7 @@ class BaseResource(pygame.sprite.Sprite):
 
 class Mountain(BaseResource):
     def __init__(self, biome, group, *smth):
-        super().__init__(biome, 'assets/mountain.png', group, *smth)
+        super().__init__(biome, assets.texture_mountain, group, *smth)
 
         self.remove_cost = 7
-        self.population = 2
+        self.stars = 2
