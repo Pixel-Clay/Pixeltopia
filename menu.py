@@ -74,17 +74,18 @@ pygame.font.init()
 
 size = pygame.display.get_window_size()
 
-punkts = [(10, size[1] - 400, 'Карта 1', '#F50E69', '#29073E', 0),
-          (10, size[1] - 300, 'Карта 2', '#F50E69', '#29073E', 1),
-          (10, size[1] - 200, 'Выход', '#F50E69', '#29073E', 2),
-          (355, 10, 'THE BATTLE OF PIXELTOPIA', '#510F58', '#510F58', 3)
-          ]
 
 # 490
 done = True
 
 
 def show_menu():
+    punkts = [(10, size[1] - 400, 'Карта 1', '#F50E69', '#29073E', 0),
+              (10, size[1] - 300, 'Карта 2', '#F50E69', '#29073E', 1),
+              (10, size[1] - 200, 'Выход', '#F50E69', '#29073E', 2),
+              (355, 10, 'THE BATTLE OF PIXELTOPIA', '#510F58', '#510F58', 3)
+              ]
+
     global done
     done = True
     game = Menu(punkts)
@@ -101,3 +102,6 @@ def show_menu():
         window.blit(info, (0, 0))
         pygame.display.flip()
     pygame.display.flip()
+
+def show_end_screen(score, player):
+    pass
