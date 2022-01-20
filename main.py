@@ -11,6 +11,8 @@ import resources
 # Классы юнитов
 import units
 
+import menu
+
 # Классы ресурсов
 from common import dprint
 
@@ -38,6 +40,8 @@ class Board:
 
         self.prev_selected = (0, 0)
         self.selected = (0, 0)
+
+        self.player_units = []
 
         # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
         self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
@@ -123,6 +127,11 @@ class Board:
                     if self.get_selected(x, y):
                         color = '#FE8692'
                         thiccness = 3
+                        size = common.cell_size - 1
+
+                    elif (x, y) in self.player_units:
+                        color = '#8b00ff'
+                        thiccness = 2
                         size = common.cell_size - 1
 
                     else:
@@ -228,20 +237,23 @@ sfx_click.set_volume(0.4)
 sfx_hurt = pygame.mixer.Sound(common.assets.sfx_hurt)
 sfx_hurt.set_volume(0.4)
 
-resolution = (720, 480)
+resolution = (1200, 800)
 screen = pygame.display.set_mode(resolution, pygame.RESIZABLE)
 pygame.display.set_caption('Pixeltopia')
 while True:
-    menu = common.MainMenu()
-    game_map = menu.show_menu()
-    dprint(game_map)
-    board = Board(16, 16, game_map)
+    menu.show_menu()
+
+    board = Board(16, 16, None)
+
     turn_manager = common.TurnManager(2, board, 4, sprites)
+
     clock = pygame.time.Clock()
+
     pygame.mixer.music.load(common.assets.music1)
     pygame.mixer.music.set_volume(common.music_volume)
     pygame.mixer.music.play()
     pygame.mixer.music.set_endevent(pygame.constants.USEREVENT)
+
     textures = [common.assets.texture_unit_warrior_1, common.assets.texture_unit_warrior_2]
     turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (0, 0)), (0, 0))
     turn_manager.next_turn()
