@@ -14,13 +14,6 @@ animation_k = 0.03
 next_turn_flag = False
 
 
-def check_parity(sprites):
-    for i in sprites:
-        if i.rect.x == i.rect.y == 0:
-            print('PARITY CHECK FAILED', i)
-            i.kill()
-
-
 # Класс ассетов для игры (содержит пути ко всем файлам, создан для удобства разработки)
 class Assets:
     def __init__(self):
@@ -69,6 +62,13 @@ def window_modes(resolution=(1200, 800)):
 def dprint(*args):
     if debug:
         print('[' + str(process_time()) + ']', *args)
+
+
+def check_parity(sprites):
+    for i in sprites:
+        if i.rect.x == i.rect.y == 0:
+            dprint('PARITY CHECK FAILED', i)
+            i.kill()
 
 
 def load_image(name, color_key=None):
@@ -178,7 +178,7 @@ class TurnManager:
         self.generate_cities(sprite_group)
 
     def next_turn(self):
-        print('Next turn')
+        dprint('Next turn')
         self.turn += 1
         if self.turn >= len(self.players):
             self.turn = 0
@@ -189,6 +189,10 @@ class TurnManager:
         if next_turn_flag:
             self.next_turn()
             next_turn_flag = False
+        units = []
+        for i in self.current_player.units:
+            units.append(i.cords)
+        self.board.player_units = units
         self.board.tick()
         self.current_player.tick()
 
