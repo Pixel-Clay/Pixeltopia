@@ -1,256 +1,104 @@
-import csv
-
-import pygame
-
-# общие функции
-import common
-
-# Классы природных обьектов(горы итд)
-import resources
-
-# Классы юнитов
-import units
-
-# Классы ресурсов
-from common import dprint
-
-sprites = pygame.sprite.Group()
-
-units.yeet()
+import pygame, sys
+import pygame as pg
 
 
-class Board:
-    # создание поля
-    def __init__(self, width, height, world):
-        self.width = width
-        self.height = height
+def Intersect(x1, x2, y1, y2, db1, db2):
+    if (x1 > x2 - db1) and (x1 < x2 + db2) and (y1 > y2 - db1) and (y1 < y2 + db2):
+        return 1
+    else:
+        return 0
 
-        # загрузка карты
-        dprint('MAP LOAD', world)
-        self.board = []
-        self.generate_map(world)
-        dprint(self.board)
-        dprint('MAP LOADED')
 
-        # значения по умолчанию
-        self.screen = screen
-        self.render_world = True
+window = pygame.display.set_mode((1200, 800))
+pygame.display.set_caption('pixelpotia')
+screen = pygame.Surface((1200, 800))
+info = pygame.Surface((1200, 800))
 
-        self.prev_selected = (0, 0)
-        self.selected = (0, 0)
-
-        # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
-        self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
-
-        # скайбокс
-        dprint('SKYBOX LOAD')
-        self.skybox = pygame.image.load(common.assets.texture_skybox).convert()
-
-        self.resize_routine()
-
-        # центрируемся
-        self.x = screen.get_size()[0] / 2 - len(self.board) / 2 * common.cell_size
-        self.y = common.cell_size
-
-    # загрузка карты
-    def generate_map(self, world):
-        # открываем CSV
-        with open('assets/map1.csv', encoding="utf8") as csvfile:
-            # чистим карту
-            self.board = []
-
-            # читаем карту
-            reader = csv.reader(csvfile, delimiter=',')
-            for index, row in enumerate(reader):
-                if index == 0:
-                    self.player_count = int(str(row[0])[0])
-                    continue
-                self.board.append([])
-                for tile in row:
-                    biomes = {'o': 0, 'p': 1, 'd': 2, 's': 3, 't': 4, 'm': 5}
-                    biome = biomes[tile[0]]
-
-                    # загрузка юнита или структуры итд согласно карте
-                    if tile[1] == 'm':  # обьект на тайле - вторая буква в коде тайла - t[m]
-                        sprite = [resources.Mountain(biome, sprites)]
-
-                    # ...
-
-                    else:
-                        sprite = []
-
-                    # упаковка спрайта в клетку
-                    # формат тайла: [id_биома, [что стоит], id_ресурса, выбран]
-                    self.board[index - 1].append([biome, sprite, 0, False])
-
-            self.board = list(zip(*self.board))
-
-    def get_biome(self, x, y):
-        return self.board[x][y][0]
-
-    def get_selected(self, x, y):
-        return self.board[x][y][3]
-
-    def get_units(self, x, y):
-        return self.board[x][y][1]
-
-    def add_unit(self, unit, x, y):
-        self.board[x][y][1].append(unit)
-
-    # настройка внешнего вида
-    def resize_routine(self):
-        common.cell_size = screen.get_size()[1] // (len(self.board) + 3)
-        self.skybox = pygame.transform.scale(self.skybox.convert(), screen.get_size())
-        for i in sprites.sprites():
-            i.resize()
-        self.key_handler_tick()
+class Sprite:
+    def __init__(self, xpos, ypos, filename):
+        self.x = xpos
+        self.y = ypos
+        self.bitmap = pygame.image.load(filename)
+        self.bitmap.set_colorkey((0, 0, 0))
 
     def render(self):
-        self.screen.blit(self.skybox, (0, 0))
-        for x in range(self.width):
-            for y in range(self.height):
-                dx = x * common.cell_size + self.x
-                dy = y * common.cell_size + self.y
-                biome = self.get_biome(x, y)
-
-                thiccness = 1
-
-                if self.render_world:
-                    # Цвет тайла
-                    color = pygame.Color(self.ground_tiles[biome])
-                    pygame.draw.rect(self.screen, color, (dx, dy, common.cell_size, common.cell_size))
-
-                    if self.get_selected(x, y):
-                        color = '#FE8692'
-                        thiccness = 3
-                        size = common.cell_size - 1
-
-                    else:
-                        # Цвет обводки тайла
-                        hsv = color.hsva
-                        color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
-                        size = common.cell_size
-
-                    # рисуем обводку
-                    pygame.draw.rect(self.screen, color, (dx, dy, size, size), thiccness)
-
-                for i in self.get_units(x, y):
-                    i.set_pos(dx, dy)
-
-        for x in range(self.width):
-            dx = x * common.cell_size + self.x
-            dy = self.height * common.cell_size + self.y
-            ground = pygame.Color('#663300')
-
-            pygame.draw.rect(self.screen, ground, (dx, dy, common.cell_size, common.cell_size))
-
-            # Цвет обводки тайла
-            hsv = ground.hsva
-            ground.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
-
-            # рисуем обводку
-            pygame.draw.rect(self.screen, ground, (dx, dy, common.cell_size, common.cell_size), 1)
-
-        sprites.update()
-        sprites.draw(self.screen)
-        pygame.display.flip()
-
-    def tick(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    self.get_click(event.pos)
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
-                common.next_turn_flag = True
-            if event.type == pygame.VIDEORESIZE:
-                self.resize_routine()
-            if event.type == pygame.constants.USEREVENT:
-                common.do_music_routine()
-
-        if self.selected != self.prev_selected:
-            self.deselect_selected(self.prev_selected)
-        self.prev_selected = self.selected
-
-        self.key_handler_tick()
-        self.render()
-
-    def key_handler_tick(self):
-        pygame.event.pump()
-        keys = pygame.key.get_pressed()
-        offset = common.cell_size // 4 if common.cell_size // 4 >= 0 else 1
-        if keys[pygame.K_s]:
-            self.y += offset
-        if keys[pygame.K_a]:
-            self.x -= offset
-        if keys[pygame.K_w]:
-            self.y -= offset
-        if keys[pygame.K_d]:
-            self.x += offset
-        if keys[pygame.K_ESCAPE]:
-            pygame.quit()
-            exit(0)
-
-    def get_click(self, mouse_pos):
-        cell = self.get_cell(mouse_pos)
-        dprint('FUNC get_click', cell)
-        self.on_click(cell)
-
-    def deselect_selected(self, cell):
-        self.board[cell[0]][cell[1]][3] = False
-
-    def get_cell(self, mouse_pos):
-        x = (mouse_pos[0] - self.x) // common.cell_size
-        y = (mouse_pos[1] - self.y) // common.cell_size
-        if x < 0 or x >= self.width:
-            return None
-        if y < 0 or y >= self.height:
-            return None
-        return int(x), int(y)
-
-    def on_click(self, cell):
-        try:
-            self.board[cell[0]][cell[1]][3] = not self.board[cell[0]][cell[1]][3]
-            sfx_click.play()
-            self.selected = cell
-        except TypeError:
-            dprint('TYPE ERROR on_click', cell)
+        screen.blit(self.bitmap, (self.x, self.y))
 
 
-pygame.mixer.pre_init(44100, -16, 2, 512)
-pygame.init()
-pygame.mixer.set_num_channels(64)
-sfx_click = pygame.mixer.Sound(common.assets.sfx_click)
-sfx_click.set_volume(0.4)
+class Menu:
+    def __init__(self, punkts=[1200, 800, u'Punkts', (2, 400, 30), (200, 250, 250)]):
+        self.punkts = punkts
 
-sfx_hurt = pygame.mixer.Sound(common.assets.sfx_hurt)
-sfx_hurt.set_volume(0.4)
+    def render(self, poverhnost, font, num_punkt):
+        for i in self.punkts:
+            if num_punkt == i[5]:
+                poverhnost.blit(font.render(i[2], 1, i[4]), (i[0], i[1]))
+            else:
+                poverhnost.blit(font.render(i[2], 1, i[3]), (i[0], i[1]))
 
-resolution = (720, 480)
-screen = pygame.display.set_mode(resolution, pygame.RESIZABLE)
-pygame.display.set_caption('Pixeltopia')
-while True:
-    menu = common.MainMenu()
-    game_map = menu.show_menu()
-    dprint(game_map)
-    board = Board(16, 16, game_map)
-    turn_manager = common.TurnManager(2, board, 4, sprites)
-    clock = pygame.time.Clock()
-    pygame.mixer.music.load(common.assets.music1)
-    pygame.mixer.music.set_volume(common.music_volume)
-    pygame.mixer.music.play()
-    pygame.mixer.music.set_endevent(pygame.constants.USEREVENT)
-    textures = [common.assets.texture_unit_warrior_1, common.assets.texture_unit_warrior_2]
-    turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (0, 0)), (0, 0))
-    turn_manager.next_turn()
-    turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (1, 1)), (1, 1))
-    units = turn_manager.current_player.get_units()
-    units[0].attack(0, 0)
+    def menu(self):
+        done = True
+        font_menu = pygame.font.Font(None, 50)
+        pygame.key.set_repeat(0, 0)
+        pygame.mouse.set_visible(True)
+        punkt = 0
+        while done:
+            info.fill((0, 0, 128))
+            screen.fill((0, 0, 128))
 
-    while True:
-        turn_manager.tick()
-        if common.do_parity_check:
-            common.check_parity(sprites)
-        clock.tick(30)
+            mp = pygame.mouse.get_pos()
+            for i in self.punkts:
+                if mp[0] > i[0] and mp[0] < i[0] + 155 and mp[1] > i[1] and mp[1] < i[1] + 50:
+                    punkt = i[5]
+            self.render(screen, font_menu, punkt)
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    sys.exit()
+                if e.type == pygame.KEYDOWN:
+                    if e.key == pygame.K_ESCAPE:
+                        sys.exit()
+                    if e.key == pygame.K_UP:
+                        if punkt > 0:
+                            punkt -= 1
+                    if e.key == pygame.K_DOWN:
+                        if punkt < len(self.punkts) - 1:
+                            punkt += 1
+                if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+                    if punkt == 0:
+                        done = False
+                    elif punkt == 1:
+                        exit()
+                    # elif punkt == 2:
+                    #     s = pg.image.load('regu.png')
+                    #     window.blit(s, info)
+            window.blit(info, (0, 0))
+            window.blit(screen, (0, 30))
+            pygame.display.flip()
+
+
+pygame.font.init()
+
+punkts = [(10, 450, u'Играть', (255, 255, 0), (0, 255, 128), 0),
+          (10, 550, u'Выход', (255, 255, 0), (0, 255, 128), 1),
+          (10, 650, u'Правила', (255, 255, 0), (0, 255, 128), 2),
+          (380, 10, u'THE BATTLE OF PIXELPOTIA', (255, 255, 0), (0, 255, 128), 3)
+          ]
+
+game = Menu(punkts)
+game.menu()
+
+done = True
+pygame.key.set_repeat(1, 1)
+while done:
+    for i in pygame.event.get():
+        if i.type == pygame.QUIT:
+            done = False
+        if i.type == pygame.KEYDOWN:
+            if i.key == pygame.K_ESCAPE:
+                game.menu()
+
+    screen.fill((0, 0, 128))
+    info.fill((0, 0, 128))
+
+    window.blit(info, (0, 0))
+    pygame.display.flip()
