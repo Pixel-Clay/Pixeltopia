@@ -1,5 +1,4 @@
 import csv
-from pprint import pprint
 
 import pygame
 
@@ -13,10 +12,11 @@ import resources
 import units
 
 # Классы ресурсов
-
 from common import dprint
 
 sprites = pygame.sprite.Group()
+
+units.yeet()
 
 
 class Board:
@@ -29,21 +29,22 @@ class Board:
         dprint('MAP LOAD', world)
         self.board = []
         self.generate_map(world)
-        pprint(self.board)
+        dprint(self.board)
         dprint('MAP LOADED')
 
         # значения по умолчанию
-
         self.screen = screen
-        self.paused = False
         self.render_world = True
+
+        self.prev_selected = (0, 0)
+        self.selected = (0, 0)
 
         # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
         self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
 
         # скайбокс
-        dprint('SKYBOX LOAD assets/skybox.png')
-        self.skybox = pygame.image.load('assets/skybox.png').convert()
+        dprint('SKYBOX LOAD')
+        self.skybox = pygame.image.load(common.assets.texture_skybox).convert()
 
         self.resize_routine()
 
@@ -54,12 +55,16 @@ class Board:
     # загрузка карты
     def generate_map(self, world):
         # открываем CSV
-        with open(world, encoding="utf8") as csvfile:
+        with open('assets/map1.csv', encoding="utf8") as csvfile:
             # чистим карту
             self.board = []
+
             # читаем карту
             reader = csv.reader(csvfile, delimiter=',')
             for index, row in enumerate(reader):
+                if index == 0:
+                    self.player_count = int(str(row[0])[0])
+                    continue
                 self.board.append([])
                 for tile in row:
                     biomes = {'o': 0, 'p': 1, 'd': 2, 's': 3, 't': 4, 'm': 5}
@@ -75,18 +80,22 @@ class Board:
                         sprite = []
 
                     # упаковка спрайта в клетку
-                    # формат тайла: [id_биома, [что стоит], id_ресурса]
-                    self.board[index].append([biome, sprite, 0])
+                    # формат тайла: [id_биома, [что стоит], id_ресурса, выбран]
+                    self.board[index - 1].append([biome, sprite, 0, False])
 
             self.board = list(zip(*self.board))
-
-            pprint(self.board)
 
     def get_biome(self, x, y):
         return self.board[x][y][0]
 
+    def get_selected(self, x, y):
+        return self.board[x][y][3]
+
     def get_units(self, x, y):
         return self.board[x][y][1]
+
+    def add_unit(self, unit, x, y):
+        self.board[x][y][1].append(unit)
 
     # настройка внешнего вида
     def resize_routine(self):
@@ -104,17 +113,26 @@ class Board:
                 dy = y * common.cell_size + self.y
                 biome = self.get_biome(x, y)
 
+                thiccness = 1
+
                 if self.render_world:
                     # Цвет тайла
                     color = pygame.Color(self.ground_tiles[biome])
                     pygame.draw.rect(self.screen, color, (dx, dy, common.cell_size, common.cell_size))
 
-                    # Цвет обводки тайла
-                    hsv = color.hsva
-                    color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
+                    if self.get_selected(x, y):
+                        color = '#FE8692'
+                        thiccness = 3
+                        size = common.cell_size - 1
+
+                    else:
+                        # Цвет обводки тайла
+                        hsv = color.hsva
+                        color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
+                        size = common.cell_size
 
                     # рисуем обводку
-                    pygame.draw.rect(self.screen, color, (dx, dy, common.cell_size, common.cell_size), 1)
+                    pygame.draw.rect(self.screen, color, (dx, dy, size, size), thiccness)
 
                 for i in self.get_units(x, y):
                     i.set_pos(dx, dy)
@@ -141,17 +159,20 @@ class Board:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                exit()
+                quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.get_click(event.pos)
-                elif event.button == 3:
-                    self.paused = not self.paused
-            if event.type == pygame.KEYDOWN:
-                if event.unicode == ' ':
-                    self.paused = not self.paused
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                common.next_turn_flag = True
             if event.type == pygame.VIDEORESIZE:
                 self.resize_routine()
+            if event.type == pygame.constants.USEREVENT:
+                common.do_music_routine()
+
+        if self.selected != self.prev_selected:
+            self.deselect_selected(self.prev_selected)
+        self.prev_selected = self.selected
 
         self.key_handler_tick()
         self.render()
@@ -171,12 +192,14 @@ class Board:
         if keys[pygame.K_ESCAPE]:
             pygame.quit()
             exit(0)
-        if keys[pygame.K_f]:
-            pygame.display.toggle_fullscreen()
 
     def get_click(self, mouse_pos):
         cell = self.get_cell(mouse_pos)
+        dprint('FUNC get_click', cell)
         self.on_click(cell)
+
+    def deselect_selected(self, cell):
+        self.board[cell[0]][cell[1]][3] = False
 
     def get_cell(self, mouse_pos):
         x = (mouse_pos[0] - self.x) // common.cell_size
@@ -185,25 +208,49 @@ class Board:
             return None
         if y < 0 or y >= self.height:
             return None
-        return x, y
+        return int(x), int(y)
 
     def on_click(self, cell):
         try:
-            self.board[cell[0]][cell[1]][0] = 5
+            self.board[cell[0]][cell[1]][3] = not self.board[cell[0]][cell[1]][3]
+            sfx_click.play()
+            self.selected = cell
         except TypeError:
-            pass
+            dprint('TYPE ERROR on_click', cell)
 
 
+pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()
+pygame.mixer.set_num_channels(64)
+sfx_click = pygame.mixer.Sound(common.assets.sfx_click)
+sfx_click.set_volume(0.4)
+
+sfx_hurt = pygame.mixer.Sound(common.assets.sfx_hurt)
+sfx_hurt.set_volume(0.4)
+
 resolution = (720, 480)
 screen = pygame.display.set_mode(resolution, pygame.RESIZABLE)
+pygame.display.set_caption('Pixeltopia')
 while True:
     menu = common.MainMenu()
     game_map = menu.show_menu()
-    del menu
-    # поле 5 на 7
+    dprint(game_map)
     board = Board(16, 16, game_map)
+    turn_manager = common.TurnManager(2, board, 4, sprites)
     clock = pygame.time.Clock()
+    pygame.mixer.music.load(common.assets.music1)
+    pygame.mixer.music.set_volume(common.music_volume)
+    pygame.mixer.music.play()
+    pygame.mixer.music.set_endevent(pygame.constants.USEREVENT)
+    textures = [common.assets.texture_unit_warrior_1, common.assets.texture_unit_warrior_2]
+    turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (0, 0)), (0, 0))
+    turn_manager.next_turn()
+    turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (1, 1)), (1, 1))
+    units = turn_manager.current_player.get_units()
+    units[0].attack(0, 0)
+
     while True:
-        board.tick()
+        turn_manager.tick()
+        if common.do_parity_check:
+            common.check_parity(sprites)
         clock.tick(30)
