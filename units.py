@@ -89,3 +89,13 @@ class BaseUnit(pygame.sprite.Sprite):
 
     def dstats(self):
         dprint('UNIT STATS', self.cords, self.health, 'hp', self)
+
+
+class Warrior(BaseUnit):
+    def __init__(self, player, group, *smth):
+        textures = [common.assets.texture_unit_warrior_1, common.assets.texture_unit_warrior_2]
+        super(Warrior, self).__init__(player, textures, group, *smth)
+        self.health = 10
+        self.attack_points = 2
+        self.defense_points = 2
+        self.range = 1
