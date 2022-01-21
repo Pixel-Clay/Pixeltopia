@@ -37,7 +37,6 @@ class Menu:
         while done:
             info.fill('#FFAE9A')
             screen.fill('#FFAE9A')
-
             mp = pygame.mouse.get_pos()
             for i in self.punkts:
                 if mp[0] > i[0] and mp[0] < i[0] + 155 and mp[1] > i[1] and mp[1] < i[1] + 50:
@@ -74,11 +73,12 @@ pygame.font.init()
 
 size = pygame.display.get_window_size()
 
-
 # 490
 done = True
 
 
+#
+#
 def show_menu():
     punkts = [(10, size[1] - 400, 'Карта 1', '#F50E69', '#29073E', 0),
               (10, size[1] - 300, 'Карта 2', '#F50E69', '#29073E', 1),
@@ -103,5 +103,25 @@ def show_menu():
         pygame.display.flip()
     pygame.display.flip()
 
-def show_end_screen(score, player):
-    pass
+
+def show_end_screen():
+    punkts = [(450, 40, u'Время игры: ', (255, 255, 0), (255, 255, 0), 0),
+              (450, 95, u'Выиграл игрок: ', (255, 255, 0), (255, 255, 0), 1)
+              ]
+
+    global done
+    done = True
+    game = Menu(punkts)
+    game.menu()
+    while done:
+        for i in pygame.event.get():
+            if i.type == pygame.QUIT:
+                quit()
+
+        window.fill('#FFAE9A')
+        screen.fill('#FFAE9A')
+        info.fill('#FFAE9A')
+
+        window.blit(info, (0, 0))
+        pygame.display.flip()
+    pygame.display.flip()
