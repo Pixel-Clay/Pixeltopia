@@ -31,6 +31,7 @@ class Assets:
         self.sfx_tick = 'assets/sounds/sfx/tick.wav'
         self.sfx_jump = 'assets/sounds/sfx/jump.wav'
         self.sfx_no = 'assets/sounds/sfx/blipNo.wav'
+        self.sfx_next_turn = 'assets/sounds/sfx/nextTurn.wav'
 
         # Текстуры строений и природных структур
         self.texture_city1 = 'assets/textures/terrain/city1.png'
@@ -235,6 +236,7 @@ class TurnManager:
             self.turn = 0
         self.current_player = self.players[self.turn]
         self.current_player.stars += self.current_player.star_per_turn
+        self.sfx[6].play()
         dprint('PLAYER STARS', self.current_player.stars, 'stars')
 
     def current_units_force_active(self):
@@ -330,6 +332,9 @@ class TurnManager:
                         i.add_city(city)
                         self.board.board[x][y][1] = [city]
                         flag = False
+        for player in self.players:
+            city = player.cities[int(chance(50))]
+            self.add_unit()
 
     def add_unit(self, unit, cords):
         self.current_player.add_unit(unit)

@@ -259,7 +259,10 @@ sfx_jump.set_volume(0.4)
 sfx_no = pygame.mixer.Sound(common.assets.sfx_no)
 sfx_no.set_volume(0.4)
 
-sfx = [sfx_hurt, sfx_star, sfx_click, sfx_tick, sfx_jump, sfx_no]
+sfx_next_turn = pygame.mixer.Sound(common.assets.sfx_next_turn)
+sfx_next_turn.set_volume(0.4)
+
+sfx = [sfx_hurt, sfx_star, sfx_click, sfx_tick, sfx_jump, sfx_no, sfx_next_turn]
 
 resolution = (1200, 800)
 screen = pygame.display.set_mode(resolution, pygame.RESIZABLE)
