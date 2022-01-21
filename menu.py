@@ -1,17 +1,15 @@
 import pygame
 import sys
 
-import common
-
 window = pygame.display.set_mode((1200, 800))
 screen = pygame.Surface(pygame.display.get_window_size())
 info = pygame.Surface(pygame.display.get_window_size())
 
 
 class Sprite:
-    def __init__(self, x, y, filename):
-        self.x = x
-        self.y = y
+    def __init__(self, xpos, ypos, filename):
+        self.x = xpos
+        self.y = ypos
         self.bitmap = pygame.image.load(filename)
         self.bitmap.set_colorkey((0, 0, 0))
 
@@ -20,68 +18,50 @@ class Sprite:
 
 
 class Menu:
-    def __init__(self, points):
-        self.points = points
+    def __init__(self, punkts=[1200, 800, u'Punkts', (2, 400, 30), (200, 250, 250)]):
+        self.punkts = punkts
 
-    def render(self, surface, font, num_points):
-        for i in self.points:
-            if num_points == i[5]:
-                surface.blit(font.render(i[2], 1, i[4]), (i[0], i[1]))
+    def render(self, poverhnost, font, num_punkt):
+        for i in self.punkts:
+            if num_punkt == i[5]:
+                poverhnost.blit(font.render(i[2], 1, i[4]), (i[0], i[1]))
             else:
-                surface.blit(font.render(i[2], 1, i[3]), (i[0], i[1]))
+                poverhnost.blit(font.render(i[2], 1, i[3]), (i[0], i[1]))
 
-    def menu(self, sfx):
-        global done, world
-        font_menu = pygame.font.Font(common.assets.font, 50)
+    def menu(self):
+        global done
+        font_menu = pygame.font.Font(None, 50)
         pygame.key.set_repeat(0, 0)
         pygame.mouse.set_visible(True)
-        point = 0
-        prev = 0
+        punkt = 0
         while done:
             info.fill('#FFAE9A')
             screen.fill('#FFAE9A')
-
             mp = pygame.mouse.get_pos()
-            for i in self.points:
-                if i[0] < mp[0] < i[0] + 155 and i[1] < mp[1] < i[1] + 50:
-                    point = i[5]
-            self.render(screen, font_menu, point)
+            for i in self.punkts:
+                if mp[0] > i[0] and mp[0] < i[0] + 155 and mp[1] > i[1] and mp[1] < i[1] + 50:
+                    punkt = i[5]
+            self.render(screen, font_menu, punkt)
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
                     sys.exit()
                 if e.type == pygame.KEYDOWN:
                     if e.key == pygame.K_ESCAPE:
                         sys.exit()
-                    elif e.key == pygame.K_UP:
-                        if point > 0:
-                            point -= 1
-                    elif e.key == pygame.K_DOWN:
-                        if point < len(self.points) - 1:
-                            point += 1
-                    elif e.key == pygame.K_RETURN:
-                        if point == 0:
-                            done = False
-                            world = 0
-                        elif point == 1:
-                            done = False
-                            world = 1
-                        elif point == 2:
-                            exit()
-
+                    if e.key == pygame.K_UP:
+                        if punkt > 0:
+                            punkt -= 1
+                    if e.key == pygame.K_DOWN:
+                        if punkt < len(self.punkts) - 1:
+                            punkt += 1
                 if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
-                    if point == 0:
+                    if punkt == 0:
                         done = False
-                        world = 0
-                    elif point == 1:
+                    if punkt == 1:
                         done = False
-                        world = 1
-                    elif point == 2:
+                    elif punkt == 2:
                         exit()
-
-                if prev != point:
-                    sfx[3].play()
-                    prev = point
-                    # elif point == 2:
+                    # elif punkt == 2:
                     #     s = pg.image.load('regu.png')
                     #     window.blit(s, info)
             window.blit(info, (0, 0))
@@ -93,21 +73,23 @@ pygame.font.init()
 
 size = pygame.display.get_window_size()
 
+# 490
 done = True
-world = 0
 
 
-def show_menu(sfx):
-    points = [(10, size[1] - 400, 'Карта 1', '#F50E69', '#29073E', 0),
+#
+#
+def show_menu():
+    punkts = [(10, size[1] - 400, 'Карта 1', '#F50E69', '#29073E', 0),
               (10, size[1] - 300, 'Карта 2', '#F50E69', '#29073E', 1),
               (10, size[1] - 200, 'Выход', '#F50E69', '#29073E', 2),
-              (0, 150, 'The Battle of Pixeltopia', '#510F58', '#510F58', 3)
+              (355, 10, 'THE BATTLE OF PIXELTOPIA', '#510F58', '#510F58', 3)
               ]
 
     global done
     done = True
-    game = Menu(points)
-    game.menu(sfx)
+    game = Menu(punkts)
+    game.menu()
     while done:
         for i in pygame.event.get():
             if i.type == pygame.QUIT:
@@ -120,9 +102,26 @@ def show_menu(sfx):
         window.blit(info, (0, 0))
         pygame.display.flip()
     pygame.display.flip()
-    sfx[2].play()
-    return world
 
 
-def show_end_screen(score, player):
-    pass
+def show_end_screen():
+    punkts = [(450, 40, u'Время игры: ', (255, 255, 0), (255, 255, 0), 0),
+              (450, 95, u'Выиграл игрок: ', (255, 255, 0), (255, 255, 0), 1)
+              ]
+
+    global done
+    done = True
+    game = Menu(punkts)
+    game.menu()
+    while done:
+        for i in pygame.event.get():
+            if i.type == pygame.QUIT:
+                quit()
+
+        window.fill('#FFAE9A')
+        screen.fill('#FFAE9A')
+        info.fill('#FFAE9A')
+
+        window.blit(info, (0, 0))
+        pygame.display.flip()
+    pygame.display.flip()
