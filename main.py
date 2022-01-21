@@ -43,6 +43,8 @@ class Board:
 
         self.player_units = []
 
+        self.manager = None
+
         # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
         self.ground_tiles = ['#00bfff', '#7cfc00', '#fce883', '#fffafa', '#228b22', '#808080']
 
@@ -172,8 +174,11 @@ class Board:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.get_click(event.pos)
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
-                common.next_turn_flag = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    common.next_turn_flag = True
+                elif event.key == pygame.K_e:
+                    self.manager.harvest(self.selected)
             if event.type == pygame.VIDEORESIZE:
                 self.resize_routine()
             if event.type == pygame.constants.USEREVENT:
@@ -237,15 +242,19 @@ sfx_click.set_volume(0.4)
 sfx_hurt = pygame.mixer.Sound(common.assets.sfx_hurt)
 sfx_hurt.set_volume(0.4)
 
+sfx_star = pygame.mixer.Sound(common.assets.sfx_pickupStar)
+sfx_star.set_volume(0.4)
+
 resolution = (1200, 800)
 screen = pygame.display.set_mode(resolution, pygame.RESIZABLE)
 pygame.display.set_caption('Pixeltopia')
 while True:
-    menu.show_menu()
+    if common.show_menu:
+        menu.show_menu()
 
     board = Board(16, 16, None)
 
-    turn_manager = common.TurnManager(2, board, 4, sprites)
+    turn_manager = common.TurnManager(2, board, 4, (sfx_star, sfx_hurt), sprites)
 
     clock = pygame.time.Clock()
 
@@ -255,11 +264,10 @@ while True:
     pygame.mixer.music.set_endevent(pygame.constants.USEREVENT)
 
     textures = [common.assets.texture_unit_warrior_1, common.assets.texture_unit_warrior_2]
-    turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (0, 0)), (0, 0))
+
+    turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (1, 0)), (1, 0))
     turn_manager.next_turn()
     turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (1, 1)), (1, 1))
-    units = turn_manager.current_player.get_units()
-    units[0].attack(0, 0)
 
     while True:
         turn_manager.tick()

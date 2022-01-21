@@ -3,11 +3,11 @@ from random import randint
 from time import process_time
 
 debug = False
-show_menu = False
+show_menu = True
 do_parity_check = True
 
 cell_size = 40
-music_volume = 0.01
+music_volume = 0.2
 music_counter = 0
 animation_k = 0.03
 
@@ -26,6 +26,7 @@ class Assets:
         # Звуковые эффекты
         self.sfx_click = 'assets/sounds/sfx/click.wav'
         self.sfx_hurt = 'assets/sounds/sfx/hurt.wav'
+        self.sfx_pickupStar = 'assets/sounds/sfx/pickupStar.wav'
 
         # Текстуры строений и природных структур
         self.texture_city1 = 'assets/textures/terrain/city1.png'
@@ -109,9 +110,9 @@ class Player:
         self.manager = manager
         self.units = []
         self.cities = []
-        self.stars = stars
+        self.stars = 0
         self.star_per_turn = stars
-        self.total_stars = 0
+        self.total_stars = self.stars
 
     def add_unit(self, unit):
         self.units.append(unit)
@@ -133,6 +134,8 @@ class Player:
 class City(pygame.sprite.Sprite):
     def __init__(self, player, texture, group, *smth):
         super().__init__(*smth)
+
+        self.type = 'city'
 
         self.player = player
 
@@ -165,10 +168,11 @@ class City(pygame.sprite.Sprite):
 
 class TurnManager:
 
-    def __init__(self, player_count, board, city_count, sprite_group):
+    def __init__(self, player_count, board, city_count, sfx, sprite_group):
 
-        self.players = [Player(self, str('Player ' + str(i + 1)), 0) for i in range(player_count)]
+        self.players = [Player(self, str('Player ' + str(i + 1)), 7) for i in range(player_count)]
         self.board = board
+        self.sfx = sfx
 
         self.turn = 0
 
@@ -176,13 +180,38 @@ class TurnManager:
 
         self.current_player = self.players[self.turn]
         self.generate_cities(sprite_group)
+        self.board.manager = self
 
     def next_turn(self):
-        dprint('Next turn')
+        for unit in self.current_player.units:
+            unit.active = True
+        print('Next turn')
         self.turn += 1
         if self.turn >= len(self.players):
             self.turn = 0
         self.current_player = self.players[self.turn]
+        self.current_player.stars += self.current_player.star_per_turn
+        print(self.current_player.stars, 'stars')
+
+    def harvest(self, cords):
+        resource = self.board.get_units(*cords)[0]
+        if resource.type == 'resource':
+            if self.current_player.stars >= resource.remove_cost:
+                self.sfx[0].play()
+                self.current_player.star_per_turn += resource.stars
+                self.current_player.stars -= resource.remove_cost
+                self.board.board[cords[0]][cords[1]][1][0].kill()
+                print(self.board.board[cords[0]][cords[1]][1])
+                self.board.board[cords[0]][cords[1]][1] = self.board.board[cords[0]][cords[1]][1][1::]
+                print('killed')
+                print(self.current_player.stars)
+            else:
+                print('too poor', abs(self.current_player.stars - resource.remove_cost))
+        if resource.type == 'unit':
+            for unit in self.current_player.units:
+                unit.update_range()
+                if cords in unit.reachable_cells:
+                    unit.attack(*cords)
 
     def tick(self):
         global next_turn_flag
@@ -195,6 +224,20 @@ class TurnManager:
         self.board.player_units = units
         self.board.tick()
         self.current_player.tick()
+        self.remove_dead()
+
+    def remove_dead(self):
+        for player in self.players:
+            for unit in player.units:
+                if unit.health <= 0:
+                    buffer = []
+                    for i in player.units:
+                        if i != unit:
+                            buffer.append(i)
+                    player.units = buffer
+                    cords = unit.cords
+                    self.board.board[cords[0]][cords[1]][1][-1].kill()
+                    self.board.board[cords[0]][cords[1]][1] = self.board.board[cords[0]][cords[1]][1][:1:]
 
     def generate_cities(self, sprite_group):
         for i in self.players:
@@ -213,10 +256,3 @@ class TurnManager:
     def add_unit(self, unit, cords):
         self.current_player.add_unit(unit)
         self.board.add_unit(unit, *cords)
-
-
-class MainMenu:
-    def show_menu(self):
-        if show_menu:
-            if input("выбор карты (1)") == 1:
-                return 'assets/map1.csv'

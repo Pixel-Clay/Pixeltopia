@@ -7,6 +7,8 @@ class BaseResource(pygame.sprite.Sprite):
     def __init__(self, biome, texture, group, *smth):
         super().__init__(*smth)
 
+        self.type = 'resource'
+
         self.biome = biome
 
         self.id = 1
