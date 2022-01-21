@@ -12,6 +12,10 @@ class BaseUnit(pygame.sprite.Sprite):
     def __init__(self, player, textures, group, cords, *smth):
         super().__init__(*smth)
 
+        self.active = True
+
+        self.type = 'unit'
+
         self.player = player
 
         self.cords = cords
@@ -71,14 +75,15 @@ class BaseUnit(pygame.sprite.Sprite):
         dprint('UNIT REACHABLE', self.cords, self.reachable_cells, self)
 
     def attack(self, x, y):
-        self.update_range()
-        dprint('UNIT ATTACK', self.cords, (x, y), self)
-        if (x, y) in self.reachable_cells:
-
-            opponent = self.player.manager.board.get_units(x, y)[-1]
-            opponent.health -= self.attack_points
-            self.health -= opponent.defense_points
-            dprint('UNIT ATTACK SUCCESS', self.cords, self.health, self)
+        if self.active:
+            self.update_range()
+            dprint('UNIT ATTACK', self.cords, (x, y), self)
+            if (x, y) in self.reachable_cells:
+                opponent = self.player.manager.board.get_units(x, y)[-1]
+                opponent.health -= self.attack_points
+                self.health -= opponent.defense_points
+                dprint('UNIT ATTACK SUCCESS', self.cords, self.health, self)
+                self.active = False
 
     def dstats(self):
         dprint('UNIT STATS', self.cords, self.health, 'hp', self)
