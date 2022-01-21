@@ -41,6 +41,8 @@ class Board:
         self.prev_selected = (0, 0)
         self.selected = (0, 0)
 
+        self.player_count = 0
+
         self.player_units = []
 
         self.manager = None
@@ -61,7 +63,8 @@ class Board:
     # загрузка карты
     def generate_map(self, world):
         # открываем CSV
-        with open('assets/map1.csv', encoding="utf8") as csvfile:
+        world_map = 'assets/map1.csv' if world == 0 else 'assets/map2.csv'
+        with open(world_map, encoding="utf8") as csvfile:
             # чистим карту
             self.board = []
 
@@ -90,6 +93,7 @@ class Board:
                     self.board[index - 1].append([biome, sprite, 0, False])
 
             self.board = list(zip(*self.board))
+            self.board[0][0][3] = True
 
     def get_biome(self, x, y):
         return self.board[x][y][0]
@@ -164,6 +168,7 @@ class Board:
 
         sprites.update()
         sprites.draw(self.screen)
+        common.draw_hud(self.manager, self.screen)
         pygame.display.flip()
 
     def tick(self):
@@ -245,16 +250,28 @@ sfx_hurt.set_volume(0.4)
 sfx_star = pygame.mixer.Sound(common.assets.sfx_pickupStar)
 sfx_star.set_volume(0.4)
 
+sfx_tick = pygame.mixer.Sound(common.assets.sfx_tick)
+sfx_tick.set_volume(0.4)
+
+sfx_jump = pygame.mixer.Sound(common.assets.sfx_jump)
+sfx_jump.set_volume(0.4)
+
+sfx_no = pygame.mixer.Sound(common.assets.sfx_no)
+sfx_no.set_volume(0.4)
+
+sfx = [sfx_hurt, sfx_star, sfx_click, sfx_tick, sfx_jump, sfx_no]
+
 resolution = (1200, 800)
 screen = pygame.display.set_mode(resolution, pygame.RESIZABLE)
 pygame.display.set_caption('Pixeltopia')
 while True:
+    world = None
     if common.show_menu:
-        menu.show_menu()
+        world = menu.show_menu(sfx)
 
-    board = Board(16, 16, None)
+    board = Board(16, 16, world)
 
-    turn_manager = common.TurnManager(2, board, 4, (sfx_star, sfx_hurt), sprites)
+    turn_manager = common.TurnManager(2, common.turns, board, 4, sfx, sprites)
 
     clock = pygame.time.Clock()
 
@@ -268,9 +285,19 @@ while True:
     turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (1, 0)), (1, 0))
     turn_manager.next_turn()
     turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (1, 1)), (1, 1))
+    turn_manager.current_units_force_active()
 
     while True:
         turn_manager.tick()
         if common.do_parity_check:
             common.check_parity(sprites)
+        if turn_manager.current_turn > turn_manager.total_turns:
+            break
         clock.tick(30)
+    file_object = open('results.txt', 'a')
+    winner = turn_manager.players[0].name if turn_manager.players[0].total_stars > turn_manager.players[
+        1].total_stars else turn_manager.players[1].name
+    winner = winner if turn_manager.players[0].total_stars != turn_manager.players[1].total_stars else 'tie'
+    file_object.write(
+        str(turn_manager.players[0].total_stars) + ' ' + str(turn_manager.players[1].total_stars) + ' ' + winner)
+    file_object.close()
