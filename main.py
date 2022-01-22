@@ -45,6 +45,8 @@ class Board:
 
         self.player_units = []
 
+        self.highlight_cells = True
+
         self.manager = None
 
         # биомы              Океан      Луга       Пустыня    Снег       Тайга      Горы
@@ -93,7 +95,8 @@ class Board:
                     self.board[index - 1].append([biome, sprite, 0, False])
 
             self.board = list(zip(*self.board))
-            self.board[0][0][3] = True
+            # self.board[0][0][3] = True
+            dprint(self.board)
 
     def get_biome(self, x, y):
         return self.board[x][y][0]
@@ -116,6 +119,7 @@ class Board:
         self.key_handler_tick()
 
     def render(self):
+        dprint('RENDER ROUTINE START')
         self.screen.blit(self.skybox, (0, 0))
         for x in range(self.width):
             for y in range(self.height):
@@ -130,18 +134,23 @@ class Board:
                     color = pygame.Color(self.ground_tiles[biome])
                     pygame.draw.rect(self.screen, color, (dx, dy, common.cell_size, common.cell_size))
 
-                    if self.get_selected(x, y):
-                        color = '#FE8692'
-                        thiccness = 3
-                        size = common.cell_size - 1
+                    if self.highlight_cells:
+                        if self.get_selected(x, y):
+                            color = '#FE8692'
+                            thiccness = 3
+                            size = common.cell_size - 1
 
-                    elif (x, y) in self.player_units:
-                        color = '#8b00ff'
-                        thiccness = 2
-                        size = common.cell_size - 1
+                        elif (x, y) in self.player_units:
+                            color = '#8b00ff'
+                            thiccness = 2
+                            size = common.cell_size - 1
 
+                        else:
+                            # Цвет обводки тайла
+                            hsv = color.hsva
+                            color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
+                            size = common.cell_size
                     else:
-                        # Цвет обводки тайла
                         hsv = color.hsva
                         color.hsva = (hsv[0], hsv[1], hsv[2] - 10, hsv[3])
                         size = common.cell_size
@@ -170,6 +179,7 @@ class Board:
         sprites.draw(self.screen)
         common.draw_hud(self.manager, self.screen)
         pygame.display.flip()
+        dprint('RENDER ROUTINE END')
 
     def tick(self):
         for event in pygame.event.get():
@@ -184,6 +194,16 @@ class Board:
                     common.next_turn_flag = True
                 elif event.key == pygame.K_e:
                     self.manager.harvest(self.selected)
+                elif event.key == pygame.K_1:
+                    self.buy_unit(units.Warrior(self.manager.current_player, sprites, self.selected))
+                elif event.key == pygame.K_2:
+                    self.buy_unit(units.Archer(self.manager.current_player, sprites, self.selected))
+                elif event.key == pygame.K_3:
+                    self.buy_unit(units.Swordsman(self.manager.current_player, sprites, self.selected))
+                elif event.key == pygame.K_4:
+                    self.buy_unit(units.Mage(self.manager.current_player, sprites, self.selected))
+                elif event.key == pygame.K_f:
+                    self.highlight_cells = not self.highlight_cells
             if event.type == pygame.VIDEORESIZE:
                 self.resize_routine()
             if event.type == pygame.constants.USEREVENT:
@@ -195,6 +215,12 @@ class Board:
 
         self.key_handler_tick()
         self.render()
+
+    def buy_unit(self, unit):
+        if self.selected in self.player_units:
+            self.manager.buy_unit(unit, self.selected)
+        else:
+            sfx_no.play()
 
     def key_handler_tick(self):
         pygame.event.pump()
@@ -213,6 +239,7 @@ class Board:
             exit(0)
 
     def get_click(self, mouse_pos):
+        sfx_click.play()
         cell = self.get_cell(mouse_pos)
         dprint('FUNC get_click', cell)
         self.on_click(cell)
@@ -232,10 +259,9 @@ class Board:
     def on_click(self, cell):
         try:
             self.board[cell[0]][cell[1]][3] = not self.board[cell[0]][cell[1]][3]
-            sfx_click.play()
             self.selected = cell
         except TypeError:
-            dprint('TYPE ERROR on_click', cell)
+            dprint('OUT OF BOARD on_click', cell)
 
 
 pygame.mixer.pre_init(44100, -16, 2, 512)
@@ -271,6 +297,7 @@ while True:
     world = None
     if common.show_menu:
         world = menu.show_menu(sfx)
+    sfx_next_turn.play()
 
     board = Board(16, 16, world)
 
@@ -283,13 +310,6 @@ while True:
     pygame.mixer.music.play()
     pygame.mixer.music.set_endevent(pygame.constants.USEREVENT)
 
-    textures = [common.assets.texture_unit_warrior_1, common.assets.texture_unit_warrior_2]
-
-    turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (1, 0)), (1, 0))
-    turn_manager.next_turn()
-    turn_manager.add_unit(units.BaseUnit(turn_manager.current_player, textures, sprites, (1, 1)), (1, 1))
-    turn_manager.current_units_force_active()
-
     while True:
         turn_manager.tick()
         if common.do_parity_check:
@@ -300,7 +320,11 @@ while True:
     file_object = open('results.txt', 'a')
     winner = turn_manager.players[0].name if turn_manager.players[0].total_stars > turn_manager.players[
         1].total_stars else turn_manager.players[1].name
-    winner = winner if turn_manager.players[0].total_stars != turn_manager.players[1].total_stars else 'tie'
+    score = turn_manager.players[0].total_stars if turn_manager.players[0].total_stars > turn_manager.players[
+        1].total_stars else turn_manager.players[1].total_stars
+    winner = winner if turn_manager.players[0].total_stars != turn_manager.players[1].total_stars else 'Ничья'
     file_object.write(
         str(turn_manager.players[0].total_stars) + ' ' + str(turn_manager.players[1].total_stars) + ' ' + winner)
     file_object.close()
+
+    menu.show_end_screen(winner, score, sfx)
