@@ -45,6 +45,28 @@ class BaseResource(pygame.sprite.Sprite):
 class Mountain(BaseResource):
     def __init__(self, biome, group, *smth):
         super().__init__(biome, assets.texture_mountain, group, *smth)
-
         self.remove_cost = 7
+        self.stars = 2
+
+
+class Fruit(BaseResource):
+    def __init__(self, biome, group, *smth):
+        texture = assets.texture_fish if biome == 0 else assets.texture_fruit
+        super().__init__(biome, texture, group, *smth)
+        self.remove_cost = 2
+        self.stars = 1
+
+
+class Forest(BaseResource):
+    def __init__(self, biome, group, *smth):
+        super().__init__(biome, assets.texture_forest, group, *smth)
+        self.remove_cost = 3
+        self.stars = 2
+
+
+class Animal(BaseResource):
+    def __init__(self, biome, group, *smth):
+        texture = assets.texture_whale if biome == 0 else assets.texture_fox
+        super().__init__(biome, texture, group, *smth)
+        self.remove_cost = 3
         self.stars = 2

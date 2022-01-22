@@ -38,10 +38,19 @@ class Assets:
         self.sfx_no = 'assets/sounds/sfx/blipNo.wav'
         self.sfx_next_turn = 'assets/sounds/sfx/nextTurn.wav'
 
-        # Текстуры строений и природных структур
+        # Текстуры строений
         self.texture_city1 = 'assets/textures/terrain/city1.png'
         self.texture_city2 = 'assets/textures/terrain/city2.png'
-        self.texture_mountain = 'assets/textures/terrain/mountain.png'
+
+        # Текстуры ресурсов
+        self.texture_mountain = 'assets/textures/resources/mountain.png'
+        self.texture_fruit = 'assets/textures/resources/fruit/fruit.png'
+        self.texture_forest = 'assets/textures/resources/forest.png'
+        self.texture_fox = 'assets/textures/resources/animal/fox.png'
+        self.texture_whale = 'assets/textures/resources/animal/whale.png'
+        self.texture_fish = 'assets/textures/resources/fruit/fish.png'
+
+
 
         # Текстуры юнитов
         self.texture_unit_warrior_1 = 'assets/textures/units/warrior/warrior1.png'
@@ -141,7 +150,7 @@ def draw_hud(manager, screen):
     if len(manager.board.get_units(*cords)) > 0:
         resource = manager.board.get_units(*cords)[0]
         if resource.type == 'resource':
-            stats = 'Ресурс, ' + str(resource.remove_cost) + ' звезд за снос, +' + str(
+            stats = 'Ресурс, ' + str(resource.remove_cost) + ' звезды за снос, +' + str(
                 resource.stars) + ' к очкам в следующий ход'
             if manager.current_player.stars >= resource.remove_cost:
                 stats += ', можно снести'
@@ -164,6 +173,10 @@ def draw_hud(manager, screen):
     screen.blit(score, (5, 5))
     screen.blit(player, (5, 25))
     screen.blit(turn_counter, (5, 45))
+    screen.blit(font.render('1 - Воин 2☆', True, '#FFFFFF'), (5, screen.get_size()[1] - 100))
+    screen.blit(font.render('2 - Лучник 3☆', True, '#FFFFFF'), (5, screen.get_size()[1] - 80))
+    screen.blit(font.render('3 - Мечник 3☆', True, '#FFFFFF'), (5, screen.get_size()[1] - 60))
+    screen.blit(font.render('4 - Маг 4☆', True, '#FFFFFF'), (5, screen.get_size()[1] - 40))
     screen.blit(stat_line, (5, screen.get_size()[1] - 20))
 
 
