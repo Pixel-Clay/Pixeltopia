@@ -1,16 +1,21 @@
 import pygame
 from random import randint
 from time import process_time
+from datetime import datetime
+
+
+import units
 
 debug = False
 show_menu = True
 do_parity_check = True
 
 cell_size = 40
-music_volume = 0.2
+music_volume = 0
 music_counter = 0
 animation_k = 0.03
-turns = 30
+turns = 15
+start_stars = 2
 
 next_turn_flag = False
 
@@ -42,10 +47,20 @@ class Assets:
         self.texture_unit_warrior_1 = 'assets/textures/units/warrior/warrior1.png'
         self.texture_unit_warrior_2 = 'assets/textures/units/warrior/warrior2.png'
 
+        self.texture_unit_archer_1 = 'assets/textures/units/archer/archer1.png'
+        self.texture_unit_archer_2 = 'assets/textures/units/archer/archer2.png'
+
+        self.texture_unit_swordsman_1 = 'assets/textures/units/swordsman/swordsman1.png'
+        self.texture_unit_swordsman_2 = 'assets/textures/units/swordsman/swordsman2.png'
+
+        self.texture_unit_mage_1 = 'assets/textures/units/mage/mage1.png'
+        self.texture_unit_mage_2 = 'assets/textures/units/mage/mage2.png'
+
         # Дефолтные (служебные) текстуры
         self.texture_skybox = 'assets/textures/skybox.png'
         self.texture_missing = 'assets/textures/missing.png'
 
+        # Шрифты
         self.font = 'assets/font/font.ttf'
 
 
@@ -70,9 +85,14 @@ def window_modes(resolution=(1200, 800)):
     return resolution, pygame.RESIZABLE
 
 
+log = open('logs/' + str(datetime.now()) + '.txt', 'w')
+
+
 def dprint(*args):
     if debug:
         print('[' + str(process_time()) + ']', *args)
+    else:
+        print('[' + str(process_time()) + ']', *args, file=log)
 
 
 def check_parity(sprites):
@@ -132,7 +152,10 @@ def draw_hud(manager, screen):
         elif resource.type == 'city':
             stats = 'Город игрока ' + str(resource.player.name)
     else:
-        stats = 'Равнина, просто равнина'
+        if manager.board.get_biome(*cords) == 0:
+            stats = 'Океан, просто вода'
+        else:
+            stats = 'Равнина, просто равнина'
 
     turn = 'Ход ' + str(int(manager.current_turn / len(manager.players))) + '(из ' + str(
         int(manager.total_turns / len(manager.players))) + ')'
@@ -212,7 +235,7 @@ class TurnManager:
 
     def __init__(self, player_count, turns, board, city_count, sfx, sprite_group):
 
-        self.players = [Player(self, str('Player ' + str(i + 1)), 7) for i in range(player_count)]
+        self.players = [Player(self, str('Player ' + str(i + 1)), start_stars) for i in range(player_count)]
         self.board = board
         self.sfx = sfx
 
@@ -228,6 +251,7 @@ class TurnManager:
         self.board.manager = self
 
     def next_turn(self):
+        self.sfx[6].play()
         self.current_turn += 1
         self.current_units_force_active()
         dprint('NEXT TURN')
@@ -236,7 +260,6 @@ class TurnManager:
             self.turn = 0
         self.current_player = self.players[self.turn]
         self.current_player.stars += self.current_player.star_per_turn
-        self.sfx[6].play()
         dprint('PLAYER STARS', self.current_player.stars, 'stars')
 
     def current_units_force_active(self):
@@ -246,14 +269,18 @@ class TurnManager:
     def harvest(self, cords):
         def harvest_subroutine(resource):
             if resource.type == 'resource':
-                if self.current_player.stars >= resource.remove_cost:
-                    self.sfx[1].play()
-                    self.current_player.star_per_turn += resource.stars
-                    self.current_player.stars -= resource.remove_cost
-                    self.board.board[cords[0]][cords[1]][1][0].kill()
-                    self.board.board[cords[0]][cords[1]][1] = self.board.board[cords[0]][cords[1]][1][1::]
-                else:
-                    self.sfx[5].play()
+                for unit in self.current_player.units:
+                    if unit.cords != cords:
+                        unit.update_range()
+                        if cords in unit.reachable_cells:
+                            if self.current_player.stars >= resource.remove_cost:
+                                self.sfx[1].play()
+                                self.current_player.star_per_turn += resource.stars
+                                self.current_player.stars -= resource.remove_cost
+                                self.board.board[cords[0]][cords[1]][1][0].kill()
+                                self.board.board[cords[0]][cords[1]][1] = self.board.board[cords[0]][cords[1]][1][1::]
+                            else:
+                                self.sfx[5].play()
             elif resource.type == 'unit':
                 for unit in self.current_player.units:
                     if unit.cords != cords:
@@ -296,10 +323,10 @@ class TurnManager:
         self.remove_dead()
 
     def update_player_units(self):
-        units = []
-        for i in self.current_player.units:
-            units.append(i.cords)
-        self.board.player_units = units
+        reachable_cells = []
+        for unit in self.current_player.units:
+            reachable_cells += unit.reachable_cells
+        self.board.player_units = reachable_cells
 
     def remove_dead(self):
         for player in self.players:
@@ -334,21 +361,32 @@ class TurnManager:
                         flag = False
         for player in self.players:
             city = player.cities[int(chance(50))]
-            self.add_unit()
+            self.add_unit(units.Warrior(player, sprite_group, city.cords), city.cords, player=player)
+        self.players[0].stars = start_stars
 
-    def add_unit(self, unit, cords):
-        self.current_player.add_unit(unit)
+    def add_unit(self, unit, cords, player=None):
+        if player is None:
+            player = self.current_player
+        player.add_unit(unit)
         self.board.add_unit(unit, *cords)
 
     def move_unit(self, orig, dest):
         unit = self.board.get_units(*orig)[-1]
         if unit.type == 'unit' and unit.is_active and len(self.board.get_units(*dest)) < 1:
+            self.sfx[4].play()
             self.board.board[dest[0]][dest[1]][1].append(self.board.board[orig[0]][orig[1]][1][-1])
             self.board.board[orig[0]][orig[1]][1] = self.board.board[orig[0]][orig[1]][1][:-2:]
             unit.cords = dest
             unit.update_range()
             unit.is_active = False
             self.update_player_units()
-            self.sfx[4].play()
         else:
             self.sfx[5].play()
+
+    def buy_unit(self, unit, cords):
+        if self.current_player.stars >= unit.cost:
+            self.add_unit(unit, cords)
+            self.current_player.stars -= unit.cost
+        else:
+            self.sfx[5].play()
+            del unit

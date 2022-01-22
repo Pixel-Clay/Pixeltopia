@@ -1,11 +1,10 @@
 import pygame
 
 import common
-from common import dprint, load_image
 
 
 def yeet():
-    dprint('yeet')
+    common.dprint('yeet')
 
 
 class BaseUnit(pygame.sprite.Sprite):
@@ -17,13 +16,12 @@ class BaseUnit(pygame.sprite.Sprite):
         self.type = 'unit'
 
         self.player = player
-
         self.cords = cords
 
         self.input_textures = textures
         self.texture = []
         for i in self.input_textures:
-            self.texture.append(load_image(i))
+            self.texture.append(common.load_image(i))
         self.current_texture = 0
         self.image = self.texture[self.current_texture]
 
@@ -31,12 +29,12 @@ class BaseUnit(pygame.sprite.Sprite):
         self.defense_points = 1
 
         self.health = 3
-
         self.range = 1
+        self.cost = 0
 
         self.reachable_cells = []
 
-        dprint('UNIT NEW', player, textures, *group, self)
+        common.dprint('UNIT NEW', player, textures, group, self)
 
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = 0, 0
@@ -48,7 +46,7 @@ class BaseUnit(pygame.sprite.Sprite):
         self.update_range()
 
     def update(self):
-        dprint('UNIT UPDATE', self.cords, self)
+        common.dprint('UNIT UPDATE', self.cords, self)
         self.current_texture += common.animation_k
         if self.current_texture >= len(self.texture):
             self.current_texture = 0
@@ -56,14 +54,14 @@ class BaseUnit(pygame.sprite.Sprite):
 
     def set_pos(self, x, y):
         self.rect.x, self.rect.y = x, y
-        dprint('UNIT SET', self.cords, self, self.rect.x, self.rect.y)
+        common.dprint('UNIT SET', self.cords, self, self.rect.x, self.rect.y)
 
     def interact(self):
-        dprint('UNIT INTERACT', self.cords, self)
+        common.dprint('UNIT INTERACT', self.cords, self)
 
     def resize(self):
         for i in range(len(self.input_textures)):
-            self.texture[i] = load_image(self.input_textures[i])
+            self.texture[i] = common.load_image(self.input_textures[i])
         self.image = self.texture[int(self.current_texture)]
         self.rect = self.image.get_rect()
 
@@ -72,30 +70,73 @@ class BaseUnit(pygame.sprite.Sprite):
         for x in range(self.cords[0] - self.range, self.cords[0] + self.range + 1):
             for y in range(self.cords[1] - self.range, self.cords[1] + self.range + 1):
                 self.reachable_cells.append((x, y))
-        dprint('UNIT REACHABLE', self.cords, self.reachable_cells, self)
+        common.dprint('UNIT REACHABLE', self.cords, self.reachable_cells, self)
+        return self.reachable_cells
 
     def attack(self, x, y):
         if self.is_active:
             self.update_range()
-            dprint('UNIT ATTACK', self.cords, (x, y), self)
+            common.dprint('UNIT ATTACK', self.cords, (x, y), self)
             if (x, y) in self.reachable_cells:
                 opponent = self.player.manager.board.get_units(x, y)[-1]
                 opponent.health -= self.attack_points
                 self.health -= opponent.defense_points
-                dprint('UNIT ATTACK SUCCESS', self.cords, self.health, self)
+                common.dprint('UNIT ATTACK SUCCESS', self.cords, self.health, self)
                 self.is_active = False
                 return True
         return False
 
     def dstats(self):
-        dprint('UNIT STATS', self.cords, self.health, 'hp', self)
+        common.dprint('UNIT STATS', self.cords, self.health, 'hp', self)
 
 
 class Warrior(BaseUnit):
-    def __init__(self, player, group, *smth):
+    def __init__(self, player, group, cords, *smth):
         textures = [common.assets.texture_unit_warrior_1, common.assets.texture_unit_warrior_2]
-        super(Warrior, self).__init__(player, textures, group, *smth)
+        super(Warrior, self).__init__(player, textures, group, cords, *smth)
         self.health = 10
         self.attack_points = 2
         self.defense_points = 2
         self.range = 1
+        self.cords = cords
+        self.cost = 2
+        self.update_range()
+
+
+class Archer(BaseUnit):
+    def __init__(self, player, group, cords, *smth):
+        textures = [common.assets.texture_unit_archer_1, common.assets.texture_unit_archer_2]
+        super(Archer, self).__init__(player, textures, group, cords, *smth)
+        self.health = 10
+        self.attack_points = 2
+        self.defense_points = 1
+        self.range = 2
+        self.cords = cords
+        self.cost = 3
+        self.update_range()
+
+
+class Swordsman(BaseUnit):
+    def __init__(self, player, group, cords, *smth):
+        textures = [common.assets.texture_unit_swordsman_1, common.assets.texture_unit_swordsman_2]
+        super(Swordsman, self).__init__(player, textures, group, cords, *smth)
+        self.health = 15
+        self.attack_points = 3
+        self.defense_points = 3
+        self.range = 1
+        self.cords = cords
+        self.cost = 3
+        self.update_range()
+
+
+class Mage(BaseUnit):
+    def __init__(self, player, group, cords, *smth):
+        textures = [common.assets.texture_unit_mage_1, common.assets.texture_unit_mage_2]
+        super(Mage, self).__init__(player, textures, group, cords, *smth)
+        self.health = 10
+        self.attack_points = 4
+        self.defense_points = 0
+        self.range = 3
+        self.cords = cords
+        self.cost = 4
+        self.update_range()
