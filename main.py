@@ -82,8 +82,17 @@ class Board:
                     biome = biomes[tile[0]]
 
                     # загрузка юнита или структуры итд согласно карте
-                    if tile[1] == 'm':  # обьект на тайле - вторая буква в коде тайла - t[m]
+                    if tile[1] == 'm':  # обьект на тайле - вторая буква в коде тайла - t[m], здесь гора
                         sprite = [resources.Mountain(biome, sprites)]
+
+                    elif tile[1] == 'f':  # лес
+                        sprite = [resources.Forest(biome, sprites)]
+
+                    elif tile[1] == 'c':  # фрукт
+                        sprite = [resources.Fruit(biome, sprites)]
+
+                    elif tile[1] == 'a':  # лес
+                        sprite = [resources.Animal(biome, sprites)]
 
                     # ...
 
