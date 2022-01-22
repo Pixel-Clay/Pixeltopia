@@ -290,7 +290,10 @@ class TurnManager:
                                 self.sfx[1].play()
                                 self.current_player.star_per_turn += resource.stars
                                 self.current_player.stars -= resource.remove_cost
-                                self.board.board[cords[0]][cords[1]][1][0].kill()
+                                try:
+                                    self.board.board[cords[0]][cords[1]][1][0].kill()
+                                except IndexError:
+                                    self.sfx[5].play()
                                 self.board.board[cords[0]][cords[1]][1] = self.board.board[cords[0]][cords[1]][1][1::]
                             else:
                                 self.sfx[5].play()
