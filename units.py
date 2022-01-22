@@ -138,5 +138,5 @@ class Mage(BaseUnit):
         self.defense_points = 0
         self.range = 3
         self.cords = cords
-        self.cost = 4
+        self.cost = 8
         self.update_range()

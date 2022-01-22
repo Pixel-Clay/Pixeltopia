@@ -11,7 +11,7 @@ show_menu = True
 do_parity_check = True
 
 cell_size = 40
-music_volume = 0
+music_volume = 0.2
 music_counter = 0
 animation_k = 0.03
 turns = 15
